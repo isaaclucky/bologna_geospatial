@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "bologna_air_quality_stations",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "station_name": "DE AMICIS", "latitude": 44.497952, "longitude": 11.3632116, "address": "Via Edmondo De Amicis, Cirenaica, San Donato-San Vitale, Bologna, Emilia-Romagna, 14007, Italia" }, "geometry": { "type": "Point", "coordinates": [ 11.3632116, 44.497952 ] } },
+{ "type": "Feature", "properties": { "station_name": "GIARDINI MARGHERITA", "latitude": 44.4822118, "longitude": 11.3526753, "address": "Giardini Margherita, Santo Stefano, Bologna, Emilia-Romagna, Italia" }, "geometry": { "type": "Point", "coordinates": [ 11.3526753, 44.4822118 ] } },
+{ "type": "Feature", "properties": { "station_name": "PORTA SAN FELICE", "latitude": 44.4992354, "longitude": 11.3272349, "address": "Porta San Felice, Piazza di Porta San Felice, Saffi, Porto-Saragozza, Bologna, Emilia-Romagna, 40122, Italia" }, "geometry": { "type": "Point", "coordinates": [ 11.3272349, 44.4992354 ] } },
+{ "type": "Feature", "properties": { "station_name": "SAN LAZZARO", "latitude": 44.4715668, "longitude": 11.4048591, "address": "San Lazzaro di Savena, Bologna, Emilia-Romagna, 40068, Italia" }, "geometry": { "type": "Point", "coordinates": [ 11.4048591, 44.4715668 ] } },
+{ "type": "Feature", "properties": { "station_name": "VIA CHIARINI", "latitude": 44.4998027, "longitude": 11.2875071, "address": "Via Giovanni Chiarini, Barca, Borgo Panigale-Reno, Casteldebole, Bologna, Emilia-Romagna, 40133, Italia" }, "geometry": { "type": "Point", "coordinates": [ 11.2875071, 44.4998027 ] } }
+]
+}
