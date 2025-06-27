@@ -77,7 +77,7 @@ class DataDownloader:
         """Return a list of available (year, month) tuples."""
         return sorted(self.data_map.keys())
     
-    def download_data(self, year: int, month: int, output_dir: str = "downloads") -> Optional[str]:
+    def download_data(self, year: int, month: int, output_dir: str = "../data/regional_traffic_data_downloads") -> Optional[str]:
         """
         Download data for the specified year and month.
         
@@ -111,6 +111,11 @@ class DataDownloader:
         # Extract filename from URL
         filename = url.split('/')[-1]
         filepath = os.path.join(output_dir, filename)
+        
+        # Check if file already exists
+        if os.path.exists(filepath):
+            print(f"File already exists. Skipping download: {filepath}")
+            return filepath  # Return existing file path
         
         try:
             print(f"Downloading data for {year}-{month:02d}...")
@@ -176,90 +181,90 @@ class DataDownloader:
         return None
 
 
-def get_csv_file_path():
-    """Get CSV file path from user or use default."""
-    print("\nCSV File Selection")
-    print("-" * 50)
-    default_path = os.path.join('data', 'DGCTA - Flussi di Traffico.csv')
-    print(f"Default CSV file: {default_path}")
+# def get_csv_file_path():
+#     """Get CSV file path from user or use default."""
+#     print("\nCSV File Selection")
+#     print("-" * 50)
+#     default_path = os.path.join('data', 'DGCTA - Flussi di Traffico.csv')
+#     print(f"Default CSV file: {default_path}")
     
-    choice = input("\nDo you want to use the default CSV file? (y/n): ").strip().lower()
+#     choice = input("\nDo you want to use the default CSV file? (y/n): ").strip().lower()
     
-    if choice == 'y' or choice == '':
-        return default_path
-    else:
-        custom_path = input("Enter the path to your CSV file: ").strip()
-        # Remove quotes if present
-        custom_path = custom_path.strip('"').strip("'")
-        return custom_path
+#     if choice == 'y' or choice == '':
+#         return default_path
+#     else:
+#         custom_path = input("Enter the path to your CSV file: ").strip()
+#         # Remove quotes if present
+#         custom_path = custom_path.strip('"').strip("'")
+#         return custom_path
 
 
-def main():
-    """Main function to demonstrate usage."""
-    print("Data Downloader for Traffic Flow Data")
-    print("=" * 50)
+# def main():
+#     """Main function to demonstrate usage."""
+#     print("Data Downloader for Traffic Flow Data")
+#     print("=" * 50)
     
-    # Get CSV file path
-    csv_path = get_csv_file_path()
+#     # Get CSV file path
+#     csv_path = get_csv_file_path()
     
-    try:
-        # Initialize downloader
-        downloader = DataDownloader(csv_path)
+#     try:
+#         # Initialize downloader
+#         downloader = DataDownloader(csv_path)
         
-        print("\nAvailable periods:")
-        periods = downloader.get_available_periods()
+#         print("\nAvailable periods:")
+#         periods = downloader.get_available_periods()
         
-        # Group by year for better display
-        years = {}
-        for year, month in periods:
-            if year not in years:
-                years[year] = []
-            years[year].append(month)
+#         # Group by year for better display
+#         years = {}
+#         for year, month in periods:
+#             if year not in years:
+#                 years[year] = []
+#             years[year].append(month)
         
-        for year in sorted(years.keys()):
-            months_str = ', '.join([f"{m:02d}" for m in sorted(years[year])])
-            print(f"  {year}: {months_str}")
+#         for year in sorted(years.keys()):
+#             months_str = ', '.join([f"{m:02d}" for m in sorted(years[year])])
+#             print(f"  {year}: {months_str}")
         
-        print(f"\nTotal periods available: {len(periods)}")
-        print()
+#         print(f"\nTotal periods available: {len(periods)}")
+#         print()
         
-        # Get user input
-        while True:
-            try:
-                year = int(input("Enter year (e.g., 2009): "))
-                month = int(input("Enter month (1-12): "))
+#         # Get user input
+#         while True:
+#             try:
+#                 year = int(input("Enter year (e.g., 2009): "))
+#                 month = int(input("Enter month (1-12): "))
                 
-                if 1 <= month <= 12:
-                    break
-                else:
-                    print("Month must be between 1 and 12")
-            except ValueError:
-                print("Please enter valid numbers")
+#                 if 1 <= month <= 12:
+#                     break
+#                 else:
+#                     print("Month must be between 1 and 12")
+#             except ValueError:
+#                 print("Please enter valid numbers")
         
-        # Download the data
-        filepath = downloader.download_data(year, month)
+#         # Download the data
+#         filepath = downloader.download_data(year, month)
         
-        if filepath:
-            # Optionally load and display the data
-            load_choice = input("\nDo you want to load and preview the data? (y/n): ")
-            if load_choice.lower() == 'y':
-                df = downloader.download_and_load_data(year, month)
-                if df is not None:
-                    print(f"\nData shape: {df.shape}")
-                    print(f"Columns: {list(df.columns)}")
-                    print("\nFirst 5 rows:")
-                    print(df.head())
+#         if filepath:
+#             # Optionally load and display the data
+#             load_choice = input("\nDo you want to load and preview the data? (y/n): ")
+#             if load_choice.lower() == 'y':
+#                 df = downloader.download_and_load_data(year, month)
+#                 if df is not None:
+#                     print(f"\nData shape: {df.shape}")
+#                     print(f"Columns: {list(df.columns)}")
+#                     print("\nFirst 5 rows:")
+#                     print(df.head())
                     
-                    # Optionally save as Excel
-                    save_excel = input("\nDo you want to save as Excel file? (y/n): ")
-                    if save_excel.lower() == 'y':
-                        excel_path = filepath.replace('.csv', '.xlsx')
-                        df.to_excel(excel_path, index=False)
-                        print(f"Saved as Excel: {excel_path}")
+#                     # Optionally save as Excel
+#                     save_excel = input("\nDo you want to save as Excel file? (y/n): ")
+#                     if save_excel.lower() == 'y':
+#                         excel_path = filepath.replace('.csv', '.xlsx')
+#                         df.to_excel(excel_path, index=False)
+#                         print(f"Saved as Excel: {excel_path}")
     
-    except Exception as e:
-        print(f"\nError: {e}")
-        print("Please check the file path and format.")
+#     except Exception as e:
+#         print(f"\nError: {e}")
+#         print("Please check the file path and format.")
 
 
 if __name__ == "__main__":
