@@ -1,8 +1,6 @@
-import csv
 import requests
 import os
-from datetime import datetime
-from typing import Optional, Dict, List
+from typing import Optional, List
 import pandas as pd
 from typing import Optional, List
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -79,73 +77,6 @@ class DataDownloader:
         """Return a list of available (year, month) tuples."""
         return sorted(self.data_map.keys())
     
-    # def download_data(self, year: int, month: int, output_dir: str = "../data/regional_traffic_data_downloads") -> Optional[str]:
-    #     """
-    #     Download data for the specified year and month.
-        
-    #     Args:
-    #         year: The year (e.g., 2009, 2010)
-    #         month: The month (1-12)
-    #         output_dir: Directory to save the downloaded file
-            
-    #     Returns:
-    #         Path to the downloaded file if successful, None otherwise
-    #     """
-    #     key = (year, month)
-        
-    #     if key not in self.data_map:
-    #         print(f"Error: No data available for {year}-{month:02d}")
-    #         available = self.get_available_periods()
-    #         if available:
-    #             print("Available periods:")
-    #             for y, m in available[:10]:  # Show first 10
-    #                 print(f"  - {y}-{m:02d}")
-    #             if len(available) > 10:
-    #                 print(f"  ... and {len(available) - 10} more")
-    #         return None
-        
-    #     data_info = self.data_map[key]
-    #     url = data_info['url']
-        
-    #     # Create output directory if it doesn't exist
-    #     os.makedirs(output_dir, exist_ok=True)
-        
-    #     # Extract filename from URL
-    #     filename = url.split('/')[-1]
-    #     filepath = os.path.join(output_dir, filename)
-        
-    #     # Check if file already exists
-    #     if os.path.exists(filepath):
-    #         print(f"File already exists. Skipping download: {filepath}")
-    #         return filepath  # Return existing file path
-        
-    #     try:
-    #         print(f"Downloading data for {year}-{month:02d}...")
-    #         print(f"URL: {url}")
-            
-    #         response = requests.get(url, stream=True)
-    #         response.raise_for_status()
-            
-    #         # Get total file size if available
-    #         total_size = int(response.headers.get('content-length', 0))
-            
-    #         # Write the file with progress indication
-    #         downloaded = 0
-    #         with open(filepath, 'wb') as f:
-    #             for chunk in response.iter_content(chunk_size=8192):
-    #                 f.write(chunk)
-    #                 downloaded += len(chunk)
-    #                 if total_size > 0:
-    #                     percent = (downloaded / total_size) * 100
-    #                     print(f"Progress: {percent:.1f}%", end='\r')
-            
-    #         print(f"\nSuccessfully downloaded to: {filepath}")
-    #         return filepath
-            
-    #     except requests.exceptions.RequestException as e:
-    #         print(f"Error downloading file: {e}")
-    #         return None
-
 
     def download_data(self, year: int, month: int, output_dir: str = "../data/regional_traffic_data_downloads") -> Optional[str]:
         key = (year, month)
@@ -217,92 +148,3 @@ class DataDownloader:
         
         return None
 
-
-# def get_csv_file_path():
-#     """Get CSV file path from user or use default."""
-#     print("\nCSV File Selection")
-#     print("-" * 50)
-#     default_path = os.path.join('data', 'DGCTA - Flussi di Traffico.csv')
-#     print(f"Default CSV file: {default_path}")
-    
-#     choice = input("\nDo you want to use the default CSV file? (y/n): ").strip().lower()
-    
-#     if choice == 'y' or choice == '':
-#         return default_path
-#     else:
-#         custom_path = input("Enter the path to your CSV file: ").strip()
-#         # Remove quotes if present
-#         custom_path = custom_path.strip('"').strip("'")
-#         return custom_path
-
-
-# def main():
-#     """Main function to demonstrate usage."""
-#     print("Data Downloader for Traffic Flow Data")
-#     print("=" * 50)
-    
-#     # Get CSV file path
-#     csv_path = get_csv_file_path()
-    
-#     try:
-#         # Initialize downloader
-#         downloader = DataDownloader(csv_path)
-        
-#         print("\nAvailable periods:")
-#         periods = downloader.get_available_periods()
-        
-#         # Group by year for better display
-#         years = {}
-#         for year, month in periods:
-#             if year not in years:
-#                 years[year] = []
-#             years[year].append(month)
-        
-#         for year in sorted(years.keys()):
-#             months_str = ', '.join([f"{m:02d}" for m in sorted(years[year])])
-#             print(f"  {year}: {months_str}")
-        
-#         print(f"\nTotal periods available: {len(periods)}")
-#         print()
-        
-#         # Get user input
-#         while True:
-#             try:
-#                 year = int(input("Enter year (e.g., 2009): "))
-#                 month = int(input("Enter month (1-12): "))
-                
-#                 if 1 <= month <= 12:
-#                     break
-#                 else:
-#                     print("Month must be between 1 and 12")
-#             except ValueError:
-#                 print("Please enter valid numbers")
-        
-#         # Download the data
-#         filepath = downloader.download_data(year, month)
-        
-#         if filepath:
-#             # Optionally load and display the data
-#             load_choice = input("\nDo you want to load and preview the data? (y/n): ")
-#             if load_choice.lower() == 'y':
-#                 df = downloader.download_and_load_data(year, month)
-#                 if df is not None:
-#                     print(f"\nData shape: {df.shape}")
-#                     print(f"Columns: {list(df.columns)}")
-#                     print("\nFirst 5 rows:")
-#                     print(df.head())
-                    
-#                     # Optionally save as Excel
-#                     save_excel = input("\nDo you want to save as Excel file? (y/n): ")
-#                     if save_excel.lower() == 'y':
-#                         excel_path = filepath.replace('.csv', '.xlsx')
-#                         df.to_excel(excel_path, index=False)
-#                         print(f"Saved as Excel: {excel_path}")
-    
-#     except Exception as e:
-#         print(f"\nError: {e}")
-#         print("Please check the file path and format.")
-
-
-if __name__ == "__main__":
-    main()
