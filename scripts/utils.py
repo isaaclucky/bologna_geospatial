@@ -31,8 +31,21 @@ def rename_traffic_columns(df):
     })
     return df
 
+def process_data(df):
+    """Process the traffic data DataFrame."""
 
-def download_and_load_data_full_year(year, month, downloader):
+    # Convert 'Day' and 'HourMinute' to datetime
+    df['datetime'] = pd.to_datetime(
+        df['Day'].astype(str) + ' ' + df['HourMinute'],
+        format='%Y%m%d %H:%M'
+    )
+
+    # Drop original 'Day' and 'HourMinute' columns
+    df.drop(columns=['Day', 'HourMinute', 'Year', 'Month'], inplace=True)
+    df = df[['datetime', 'MTSStationID', 'DirectionCode', 'VehicleType', 'TransitCount']]
+    return df
+
+def load_data(selected_stations, downloader, year, month=None):
     """    Downloads and loads traffic data for a full year.
     Args:
         year (int): The year for which to download the data.
@@ -40,14 +53,15 @@ def download_and_load_data_full_year(year, month, downloader):
         pd.DataFrame: DataFrame containing the traffic data for the specified year.
     """
     df = pd.DataFrame()
-    if month == 0:
+    if month:
+        df = downloader.download_and_load_data(year=year, month=month)
+    else:
         for m in range(1, 13):
             monthly_data = downloader.download_and_load_data(year=year, month=m)
+            monthly_data = monthly_data[monthly_data['APP_ID'].isin(selected_stations)]
             df = pd.concat([df, monthly_data], ignore_index=True)
-    else:
-        monthly_data = downloader.download_and_load_data(year=year, month=month)
-        df = pd.concat([df, monthly_data], ignore_index=True)
     df = rename_traffic_columns(df)
+    df = process_data(df)
     
     return df
 

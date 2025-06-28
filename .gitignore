@@ -5,7 +5,9 @@ __pycache__/
 
 # C extensions
 *.so
+data/traffic_data/*.csv
 data/regional_traffic_data_downloads/*
+data/geostat_data/*.csv
 # Distribution / packaging
 .Python
 build/

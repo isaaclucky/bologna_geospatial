@@ -44,45 +44,68 @@ class VehicleTypeModel:
 
         self.city_data['is_weekend'] = self.city_data['datetime'].dt.dayofweek.apply(lambda x: 1 if x >= 5 else 0)
         self.city_data['is_holiday'] = self.city_data['datetime'].dt.date.astype(str).isin(self.HOLIDAYS)
-
     def load_geodata(self):
-        if self.landuse_gpkg is None or self.ltz_shp is None:
-            raise ValueError("landuse_gpkg and ltz_shp must be provided.")
+        # Accept either path or direct GeoDataFrame for flexibility
+        if self.landuse_gpkg is None and not hasattr(self, "landuse_gdf"):
+            raise ValueError("Either landuse_gpkg or landuse_gdf must be provided.")
+        if self.ltz_shp is None:
+            raise ValueError("ltz_shp must be provided.")
 
-        self.land = gpd.read_file(self.landuse_gpkg, layer="multipolygons").to_crs("EPSG:32632")
-        self.land.dropna(subset=['landuse'], inplace=True)
+        # If using pyrosm/OSM, set self.land to the passed-in GeoDataFrame
+        if hasattr(self, "landuse_gdf"):
+            self.land = self.landuse_gdf.to_crs("EPSG:32632")
+        else:
+            self.land = gpd.read_file(self.landuse_gpkg, layer="multipolygons").to_crs("EPSG:32632")
+            self.land.dropna(subset=['landuse'], inplace=True)
+
         self.ltz_zones = gpd.read_file(self.ltz_shp).to_crs("EPSG:32632")
-
         self.sensors_gdf = gpd.GeoDataFrame(
             self.metadata[['id_uni', 'codice spira', 'codice via']],
             geometry=gpd.points_from_xy(self.metadata['longitudine'], self.metadata['latitudine']),
             crs="EPSG:4326"
         ).to_crs("EPSG:32632")
         self.sensors_gdf['buffered'] = self.sensors_gdf.geometry.buffer(50)
-
         self.buffered_gdf = gpd.GeoDataFrame(self.sensors_gdf, geometry='buffered', crs="EPSG:32632")
         self.buffered_gdf.drop(columns=['geometry'], inplace=True)
         self.buffered_gdf.rename(columns={'buffered': 'geometry'}, inplace=True)
         self.buffered_gdf.set_geometry('geometry', inplace=True)
 
     def assign_landuse(self):
+        def thematic_landuse(row):
+            # List columns in "priority" order ("depot" and "industrial" are very freight-oriented, for example)
+            keywords = ["depot", "industrial", "construction", "meadow", "military", "residential", "landuse"]
+            for col in keywords:
+                val = row.get(col, None)
+                if pd.notnull(val) and str(val).lower() not in ("nan", "none"):
+                    return f"{col}:{val}" if col != "landuse" else val
+            return "unknown"
+
+        # Perform join as usual, but bring in *all relevant columns* from landuse
+        thematic_cols = [c for c in ["landuse", "depot", "industrial", "construction", 
+                                    "meadow", "military", "residential"] if c in self.land.columns]
         joined = gpd.sjoin(
             self.buffered_gdf[['id_uni', 'geometry']],
-            self.land[['geometry', 'landuse']],
+            self.land[["geometry"] + thematic_cols],
             how='left',
             predicate='intersects'
         )
+
         joined['original_geometry'] = joined['geometry'].copy()
         joined['intersection_area'] = joined.apply(
             lambda row: row['geometry'].intersection(row['original_geometry']).area, axis=1)
+
+        # Keep all thematic columns and id_uni, keep largest intersect per sensor
+        thematic_fields = ['id_uni', 'intersection_area'] + thematic_cols
         dominant_landuse = (
             joined.sort_values('intersection_area', ascending=False)
-                  .drop_duplicates(subset=['id_uni'])
-                  [['id_uni', 'landuse']]
+                .drop_duplicates(subset=['id_uni'])
+                [thematic_fields]
         )
         all_sensors = self.buffered_gdf[['id_uni']].drop_duplicates()
         dominant_landuse = all_sensors.merge(dominant_landuse, on='id_uni', how='left')
-        dominant_landuse['landuse'] = dominant_landuse['landuse'].fillna('unknown')
+
+        # Build best context landuse feature
+        dominant_landuse['thematic_landuse'] = dominant_landuse.apply(thematic_landuse, axis=1)
 
         # Official LTZ flagging
         sensors_in_ltz = gpd.sjoin(
@@ -99,25 +122,31 @@ class VehicleTypeModel:
         self.dominant_landuse = dominant_landuse
 
     def context_functions(self):
-        def calc_dist(landuse):
-            if landuse in ['commercial', 'retail']:
+        # Use new thematic_landuse value for context logic!
+        def calc_dist(thematic):
+            thematic_ = str(thematic or "")
+            if any(x in thematic_ for x in ['commercial', 'retail']):
                 return 0
-            elif landuse in ['mixed', 'residential']:
+            elif any(x in thematic_ for x in ['mixed', 'residential']):
                 return 75
             else:
                 return 150
-        def near_loading(landuse):
-            return landuse in ['commercial', 'retail', 'industrial', 'construction']
-
+        def near_loading(thematic):
+            # Now also count industrial, depot, construction etc
+            thematic_ = str(thematic or "")
+            return any(x in thematic_ for x in [
+                'commercial', 'retail', 'industrial', 'construction', 'depot'
+            ])
         sensor_locations = {}
         for _, row in self.dominant_landuse.iterrows():
             sensor_locations[row['id_uni']] = {
-                'landuse': row['landuse'],
-                'dist_commercial': calc_dist(row['landuse']),
-                'near_loading_zone': near_loading(row['landuse']),
+                'thematic_landuse': row['thematic_landuse'],
+                'dist_commercial': calc_dist(row['thematic_landuse']),
+                'near_loading_zone': near_loading(row['thematic_landuse']),
                 'in_ltz': bool(row['in_ltz_official'])
             }
         self.sensor_locations = sensor_locations
+
 
     #########################
     # VEHICLE SHARE LOGIC

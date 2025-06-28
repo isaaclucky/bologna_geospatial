@@ -4,6 +4,8 @@ import os
 from datetime import datetime
 from typing import Optional, Dict, List
 import pandas as pd
+from typing import Optional, List
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class DataDownloader:
     def __init__(self, csv_file_path: Optional[str] = None):
@@ -77,73 +79,120 @@ class DataDownloader:
         """Return a list of available (year, month) tuples."""
         return sorted(self.data_map.keys())
     
-    def download_data(self, year: int, month: int, output_dir: str = "../data/regional_traffic_data_downloads") -> Optional[str]:
-        """
-        Download data for the specified year and month.
+    # def download_data(self, year: int, month: int, output_dir: str = "../data/regional_traffic_data_downloads") -> Optional[str]:
+    #     """
+    #     Download data for the specified year and month.
         
-        Args:
-            year: The year (e.g., 2009, 2010)
-            month: The month (1-12)
-            output_dir: Directory to save the downloaded file
+    #     Args:
+    #         year: The year (e.g., 2009, 2010)
+    #         month: The month (1-12)
+    #         output_dir: Directory to save the downloaded file
             
-        Returns:
-            Path to the downloaded file if successful, None otherwise
-        """
-        key = (year, month)
+    #     Returns:
+    #         Path to the downloaded file if successful, None otherwise
+    #     """
+    #     key = (year, month)
         
+    #     if key not in self.data_map:
+    #         print(f"Error: No data available for {year}-{month:02d}")
+    #         available = self.get_available_periods()
+    #         if available:
+    #             print("Available periods:")
+    #             for y, m in available[:10]:  # Show first 10
+    #                 print(f"  - {y}-{m:02d}")
+    #             if len(available) > 10:
+    #                 print(f"  ... and {len(available) - 10} more")
+    #         return None
+        
+    #     data_info = self.data_map[key]
+    #     url = data_info['url']
+        
+    #     # Create output directory if it doesn't exist
+    #     os.makedirs(output_dir, exist_ok=True)
+        
+    #     # Extract filename from URL
+    #     filename = url.split('/')[-1]
+    #     filepath = os.path.join(output_dir, filename)
+        
+    #     # Check if file already exists
+    #     if os.path.exists(filepath):
+    #         print(f"File already exists. Skipping download: {filepath}")
+    #         return filepath  # Return existing file path
+        
+    #     try:
+    #         print(f"Downloading data for {year}-{month:02d}...")
+    #         print(f"URL: {url}")
+            
+    #         response = requests.get(url, stream=True)
+    #         response.raise_for_status()
+            
+    #         # Get total file size if available
+    #         total_size = int(response.headers.get('content-length', 0))
+            
+    #         # Write the file with progress indication
+    #         downloaded = 0
+    #         with open(filepath, 'wb') as f:
+    #             for chunk in response.iter_content(chunk_size=8192):
+    #                 f.write(chunk)
+    #                 downloaded += len(chunk)
+    #                 if total_size > 0:
+    #                     percent = (downloaded / total_size) * 100
+    #                     print(f"Progress: {percent:.1f}%", end='\r')
+            
+    #         print(f"\nSuccessfully downloaded to: {filepath}")
+    #         return filepath
+            
+    #     except requests.exceptions.RequestException as e:
+    #         print(f"Error downloading file: {e}")
+    #         return None
+
+
+    def download_data(self, year: int, month: int, output_dir: str = "../data/regional_traffic_data_downloads") -> Optional[str]:
+        key = (year, month)
         if key not in self.data_map:
             print(f"Error: No data available for {year}-{month:02d}")
-            available = self.get_available_periods()
-            if available:
-                print("Available periods:")
-                for y, m in available[:10]:  # Show first 10
-                    print(f"  - {y}-{m:02d}")
-                if len(available) > 10:
-                    print(f"  ... and {len(available) - 10} more")
             return None
-        
+
         data_info = self.data_map[key]
         url = data_info['url']
-        
-        # Create output directory if it doesn't exist
         os.makedirs(output_dir, exist_ok=True)
-        
-        # Extract filename from URL
         filename = url.split('/')[-1]
         filepath = os.path.join(output_dir, filename)
-        
-        # Check if file already exists
+
         if os.path.exists(filepath):
             print(f"File already exists. Skipping download: {filepath}")
-            return filepath  # Return existing file path
-        
+            return filepath
+
         try:
-            print(f"Downloading data for {year}-{month:02d}...")
-            print(f"URL: {url}")
-            
-            response = requests.get(url, stream=True)
+            print(f"Downloading {year}-{month:02d} ...")
+            response = requests.get(url, stream=True, timeout=30)
             response.raise_for_status()
-            
-            # Get total file size if available
-            total_size = int(response.headers.get('content-length', 0))
-            
-            # Write the file with progress indication
-            downloaded = 0
             with open(filepath, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
-                    downloaded += len(chunk)
-                    if total_size > 0:
-                        percent = (downloaded / total_size) * 100
-                        print(f"Progress: {percent:.1f}%", end='\r')
-            
-            print(f"\nSuccessfully downloaded to: {filepath}")
+            print(f"Downloaded: {filepath}")
             return filepath
-            
-        except requests.exceptions.RequestException as e:
-            print(f"Error downloading file: {e}")
+        except Exception as e:
+            print(f"Failed to download {year}-{month:02d}: {e}")
             return None
-    
+
+    # --- New download_year method ---
+    def download_year(self, year: int, output_dir: str = "../data/regional_traffic_data_downloads", max_workers: int = 4) -> List[str]:
+        """
+        Download all monthly files for the given year, in parallel.
+        Returns a list of successfully downloaded file paths.
+        """
+        months = [m for (y, m) in self.data_map if y == year]
+        results = []
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {executor.submit(self.download_data, year, month, output_dir): month for month in months}
+            for future in as_completed(futures):
+                result = future.result()
+                if result:
+                    results.append(result)
+        return results
+
+
     def download_and_load_data(self, year: int, month: int) -> Optional[pd.DataFrame]:
         """
         Download data and load it into a pandas DataFrame.
@@ -159,18 +208,6 @@ class DataDownloader:
         
         if filepath:
             try:
-                # Try different separators and encodings
-                for sep in [';', ',', '\t']:
-                    for encoding in ['utf-8', 'latin-1', 'iso-8859-1']:
-                        try:
-                            df = pd.read_csv(filepath, sep=sep, encoding=encoding)
-                            if len(df.columns) > 1:  # Valid separator found
-                                print(f"Data loaded successfully. Shape: {df.shape}")
-                                return df
-                        except:
-                            continue
-                
-                print("Warning: Could not determine proper CSV format. Loading with default settings.")
                 df = pd.read_csv(filepath)
                 return df
                 
