@@ -26,6 +26,9 @@ share/python-wheels/
 *.egg
 MANIFEST
 
+data/bologna_traffic_2024.csv
+data/bologna_traffic_time_series.csv
+data/bologna_traffic_metadata.csv
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
