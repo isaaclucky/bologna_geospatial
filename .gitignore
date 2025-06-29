@@ -8,6 +8,7 @@ __pycache__/
 data/traffic_data/*.csv
 data/regional_traffic_data_downloads/*
 data/geostat_data/*.csv
+data/traffic_data/rifter_nodi_pt/*
 # Distribution / packaging
 .Python
 build/
