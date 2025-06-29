@@ -1,3 +1,4 @@
+import math
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point, box, Polygon
@@ -65,6 +66,57 @@ def load_data(selected_stations, downloader, year, month=None):
     
     return df
 
+
+def generate_osm_direction(df, graph):
+    """
+    Generate OSM direction data for a DataFrame of IDs.
+    """
+
+    df_ids = df.drop_duplicates(subset=['id_uni'])[df.direzione.isna()].copy()
+
+    # For all points at once, get nearest edges
+    edges = ox.nearest_edges(
+        graph, X= df_ids['longitudine'], Y=df_ids['latitudine']
+    )
+    # Unpack returned tuples into DataFrame columns
+    df_ids[['u', 'v', 'k']] = pd.DataFrame(edges, index=df_ids.index)
+
+    def get_edge_bearing(u, v, k, G):
+        # Get edge data
+        edge_data = G.get_edge_data(u, v, k)
+        # Get geometry
+        if 'geometry' in edge_data:
+            line = edge_data['geometry']
+            start, end = line.coords[0], line.coords[-1]
+        else:
+            # If geometry is missing, use node coords
+            start = (G.nodes[u]['x'], G.nodes[u]['y'])
+            end = (G.nodes[v]['x'], G.nodes[v]['y'])
+        # Compute bearing from start to end (OSM direction)
+        dx = end[0] - start[0]
+        dy = end[1] - start[1]
+        bearing = math.degrees(math.atan2(dy, dx))
+        bearing = (bearing + 360) % 360
+        return bearing, edge_data.get('oneway', False)
+
+    df_ids['osm_bearing'] = None
+    df_ids['osm_oneway'] = None
+    for idx, row in df_ids.iterrows():
+        u, v, k = row['u'], row['v'], row['k']
+        bearing, oneway = get_edge_bearing(u, v, k, graph)
+        df_ids.at[idx, 'osm_bearing'] = bearing
+        df_ids.at[idx, 'osm_oneway'] = oneway
+
+    def bearing_to_compass(bearing):
+        dirs = ['E', 'NE', 'N', 'NO', 'O', 'SO', 'S', 'SE']
+        ix = round(((bearing % 360) / 45)) % 8
+        return dirs[ix]
+
+    df_ids['osm_direction'] = df_ids['osm_bearing'].apply(bearing_to_compass)
+
+    df_ids.rename(columns={
+        'osm_direction': 'direction'}, inplace=True)
+    return df_ids[['id_uni', 'direction']]
 
 class GeoStationFilter:
     """
