@@ -1,0 +1,15 @@
+{
+"type": "FeatureCollection",
+"name": "filtered_regional_stations",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "NAME": 152, "LAT_MM1": 4929067.228, "LONG_MM1": 1679817.955, "LAT_WGS84": 44.492381418999997, "LONG_WGS84": 11.2612334872 }, "geometry": { "type": "Point", "coordinates": [ 11.2612334872, 44.492381419 ] } },
+{ "type": "Feature", "properties": { "NAME": 154, "LAT_MM1": 4921128.171, "LONG_MM1": 1686727.084, "LAT_WGS84": 44.419216521300001, "LONG_WGS84": 11.345197525 }, "geometry": { "type": "Point", "coordinates": [ 11.345197525, 44.419216521300001 ] } },
+{ "type": "Feature", "properties": { "NAME": 156, "LAT_MM1": 4930637.206, "LONG_MM1": 1694669.57, "LAT_WGS84": 44.502653469400002, "LONG_WGS84": 11.448450681500001 }, "geometry": { "type": "Point", "coordinates": [ 11.448450681500001, 44.502653469400002 ] } },
+{ "type": "Feature", "properties": { "NAME": 157, "LAT_MM1": 4934675.882, "LONG_MM1": 1693670.821, "LAT_WGS84": 44.539247296, "LONG_WGS84": 11.4374132482 }, "geometry": { "type": "Point", "coordinates": [ 11.4374132482, 44.539247296 ] } },
+{ "type": "Feature", "properties": { "NAME": 160, "LAT_MM1": 4935885.299, "LONG_MM1": 1680456.55, "LAT_WGS84": 44.553553702499997, "LONG_WGS84": 11.2716418274 }, "geometry": { "type": "Point", "coordinates": [ 11.2716418274, 44.553553702499997 ] } },
+{ "type": "Feature", "properties": { "NAME": 177, "LAT_MM1": 4928087.451, "LONG_MM1": 1693464.135, "LAT_WGS84": 44.480043784599999, "LONG_WGS84": 11.4323470596 }, "geometry": { "type": "Point", "coordinates": [ 11.4323470596, 44.480043784599999 ] } },
+{ "type": "Feature", "properties": { "NAME": 502, "LAT_MM1": 4932823.936, "LONG_MM1": 1678273.253, "LAT_WGS84": 44.526558193900001, "LONG_WGS84": 11.243116800399999 }, "geometry": { "type": "Point", "coordinates": [ 11.243116800399999, 44.526558193900001 ] } },
+{ "type": "Feature", "properties": { "NAME": 683, "LAT_MM1": 4934027.548, "LONG_MM1": 1693968.102, "LAT_WGS84": 44.533336110999997, "LONG_WGS84": 11.440908066900001 }, "geometry": { "type": "Point", "coordinates": [ 11.440908066900001, 44.533336111 ] } }
+]
+}

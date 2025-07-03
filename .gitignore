@@ -9,6 +9,9 @@ data/traffic_data/*.csv
 data/regional_traffic_data_downloads/*
 data/geostat_data/*.csv
 data/traffic_data/rifter_nodi_pt/*
+data/traffic_data/rifter_arcstra_li/*
+data/geostat_data/zone-del-comune-di-bologna/*
+
 # Distribution / packaging
 .Python
 build/

@@ -6,6 +6,11 @@ import osmnx as ox
 import matplotlib.pyplot as plt
 from typing import Tuple, Optional, Union
 
+import matplotlib.patches as patches
+from matplotlib.patches import Circle
+import contextily as ctx
+import numpy as np
+
 def rename_traffic_columns(df):
     """Rename Italian traffic dataset columns to English."""
 
@@ -369,3 +374,158 @@ class GeoStationFilter:
                 )
 
         return m
+    
+
+    def plot_buffer_map_static(self, region_name: str, city_name: str, buffer_km: float = 2, 
+                            save_path: str = None, dpi: int = 300):
+        """
+        Create static PNG plot with two views: regional overview and city close-up
+        with buffer zone and stations.
+        
+        Args:
+            region_name: Name of the region (e.g., "Emilia-Romagna, Italy")
+            city_name: Name of the city (e.g., "Bologna")
+            buffer_km: Radius of buffer in kilometers
+            save_path: Path to save the PNG (optional)
+            dpi: Resolution of the output image
+        Returns:
+            matplotlib figure
+        """
+        # Get city boundary
+        city_gdf = self._get_place_geom(city_name)
+        if city_gdf is None or city_gdf.empty:
+            raise ValueError(f"Could not fetch city boundary for '{city_name}'.")
+        
+        # Get region boundary
+        region_gdf = self._get_place_geom(region_name)
+        
+        # Buffer the city polygon
+        city_proj = city_gdf.to_crs(3857)
+        buffer_geom_proj = city_proj.geometry.buffer(buffer_km * 1000)
+        buffer_gdf_proj = gpd.GeoDataFrame(geometry=buffer_geom_proj, crs=3857)
+        buffer_gdf = buffer_gdf_proj.to_crs(self.gdf.crs)
+        
+        # Find stations within buffer
+        stations_in_buffer = self.gdf[self.gdf.within(buffer_gdf.iloc[0].geometry)]
+        print(f"Found {len(stations_in_buffer)} stations within {buffer_km}km buffer of {city_name}.")
+        
+        # Create figure with two subplots
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
+        
+        # Convert everything to Web Mercator for contextily
+        region_3857 = region_gdf.to_crs(3857) if region_gdf is not None else None
+        city_3857 = city_gdf.to_crs(3857)
+        buffer_3857 = buffer_gdf.to_crs(3857)
+        stations_3857 = self.gdf.to_crs(3857)
+        stations_buffer_3857 = stations_in_buffer.to_crs(3857)
+        
+        # SUBPLOT 1: Regional View
+        ax1.set_title(f'Regional Overview: {region_name}', fontsize=16, fontweight='bold')
+        
+        # Plot region boundary
+        if region_3857 is not None:
+            region_3857.boundary.plot(ax=ax1, color='#1E90FF', linewidth=2.5, 
+                                    linestyle='-', label=f'Region: {region_name}')
+        
+        # Plot all stations
+        stations_3857.plot(ax=ax1, color='black', markersize=15, alpha=0.6, 
+                        label='All stations', zorder=3)
+        
+        # Highlight stations in buffer
+        if not stations_buffer_3857.empty:
+            stations_buffer_3857.plot(ax=ax1, color='red', markersize=25, 
+                                    alpha=0.8, label=f'Stations in {buffer_km}km buffer', 
+                                    zorder=4, edgecolor='darkred', linewidth=0.5)
+        
+        # Plot buffer zone
+        buffer_3857.boundary.plot(ax=ax1, color='#00BFFF', linewidth=2, 
+                                alpha=0.8, label=f'{buffer_km}km buffer', zorder=2)
+        
+        # Plot city boundary
+        city_3857.boundary.plot(ax=ax1, color='#FF4500', linewidth=3, 
+                            linestyle='--', label=f'City: {city_name}', zorder=3)
+        
+        # Add basemap
+        try:
+            ctx.add_basemap(ax1, source=ctx.providers.CartoDB.Positron, zoom=9)
+        except:
+            print("Warning: Could not add basemap. Continuing without it.")
+        
+        # Set extent to region bounds with padding
+        if region_3857 is not None:
+            minx, miny, maxx, maxy = region_3857.total_bounds
+            ax1.set_xlim(minx - 10000, maxx + 10000)
+            ax1.set_ylim(miny - 10000, maxy + 10000)
+        
+        ax1.legend(loc='upper right', fontsize=10)
+        ax1.set_xlabel('Longitude', fontsize=12)
+        ax1.set_ylabel('Latitude', fontsize=12)
+        
+        # SUBPLOT 2: City Close-up View
+        ax2.set_title(f'City View: {city_name} with {buffer_km}km Buffer', 
+                    fontsize=16, fontweight='bold')
+        
+        # Plot buffer fill
+        buffer_3857.plot(ax=ax2, color='#00BFFF', alpha=0.15, zorder=1)
+        
+        # Plot buffer boundary
+        buffer_3857.boundary.plot(ax=ax2, color='#00BFFF', linewidth=3, 
+                                label=f'{buffer_km}km buffer', zorder=2)
+        
+        # Plot city boundary
+        city_3857.plot(ax=ax2, facecolor='none', edgecolor='#FF4500', 
+                    linewidth=4, linestyle='--', label=f'City: {city_name}', zorder=3)
+        
+        # Plot all stations in the area
+        # Get bounds for filtering
+        buffer_bounds = buffer_3857.total_bounds
+        padding = 2000  # 2km padding
+        area_stations = stations_3857.cx[buffer_bounds[0]-padding:buffer_bounds[2]+padding, 
+                                        buffer_bounds[1]-padding:buffer_bounds[3]+padding]
+        
+        area_stations.plot(ax=ax2, color='gray', markersize=40, alpha=0.5, 
+                        label='Nearby stations', zorder=3)
+        
+        # Highlight stations in buffer
+        if not stations_buffer_3857.empty:
+            stations_buffer_3857.plot(ax=ax2, color='red', markersize=60, 
+                                    alpha=0.9, label=f'Stations in buffer ({len(stations_buffer_3857)})', 
+                                    zorder=4, edgecolor='darkred', linewidth=1)
+            
+            # Add station names for close-up view
+            for idx, row in stations_buffer_3857.iterrows():
+                if 'NAME' in row:
+                    ax2.annotate(row['NAME'], 
+                            xy=(row.geometry.x, row.geometry.y),
+                            xytext=(5, 5), textcoords='offset points',
+                            fontsize=8, ha='left',
+                            bbox=dict(boxstyle='round,pad=0.3', fc='yellow', alpha=0.7))
+        
+        # Add basemap
+        try:
+            ctx.add_basemap(ax2, source=ctx.providers.CartoDB.Positron, zoom=12)
+        except:
+            print("Warning: Could not add basemap. Continuing without it.")
+        
+        # Set extent to buffer bounds with small padding
+        minx, miny, maxx, maxy = buffer_3857.total_bounds
+        ax2.set_xlim(minx - 1000, maxx + 1000)
+        ax2.set_ylim(miny - 1000, maxy + 1000)
+        
+        ax2.legend(loc='upper right', fontsize=10)
+        ax2.set_xlabel('Longitude', fontsize=12)
+        ax2.set_ylabel('Latitude', fontsize=12)
+        
+        # Add grid
+        ax1.grid(True, alpha=0.3)
+        ax2.grid(True, alpha=0.3)
+        
+        # Adjust layout
+        plt.tight_layout()
+        
+        # Save if path provided
+        if save_path:
+            plt.savefig(save_path, dpi=dpi, bbox_inches='tight')
+            print(f"Plot saved to: {save_path}")
+        
+        return fig
