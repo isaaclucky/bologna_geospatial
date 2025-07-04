@@ -77,7 +77,7 @@ Bologna-Traffic-Air-Pollution-Analysis/
 ## 🚀 Installation & Setup
 
 ### Prerequisites
-- Python 3.8+
+- Python 3.11+
 - Jupyter Notebook/Lab
 
 ### Installation Steps
@@ -85,9 +85,9 @@ Bologna-Traffic-Air-Pollution-Analysis/
 ```bash
 # Clone the repository
 git clone https://github.com/isaaclucky/bologna_geospatial.git
-cd Bologna-Traffic-Air-Pollution-Analysis
+cd bologna_geospatial
 
-# Create virtual environment
+# Create a virtual environment
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
@@ -110,7 +110,7 @@ Navigate through the notebooks in sequential order:
 ## 🔬 Methodology Highlights
 
 ### Buffer Zone Analysis
-- **Zone 1**: 0-0.5 km (weight: 1.0)
+- **Zone 1**: 0-0.75 km (weight: 1.0)
 - **Zone 2**: 0.5-1.5 km (weight: 0.5)
 - **Zone 3**: 1.5-3.0 km (weight: 0.33)
 
@@ -141,7 +141,7 @@ Navigate through the notebooks in sequential order:
 
 - **Data Processing**: Python, Pandas, NumPy
 - **Geospatial Analysis**: GeoPandas, Shapely, GDAL
-- **Visualization**: Matplotlib, Seaborn, Folium, Plotly
+- **Visualisation**: Matplotlib, Seaborn, Folium, Plotly
 - **Statistical Analysis**: SciPy, Statsmodels
 - **Machine Learning**: Scikit-learn
 
@@ -162,8 +162,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 - **Bologna Municipality** for providing open access to traffic monitoring data
 - **ARPAE Emilia-Romagna** for air quality measurements
-- **Professor Diego Giuliani** For Project Supervising and Academic Guidance
-- **Maurizio Napolitano** For Project Supervising and Academic Guidance
+- **Professor Diego Giuliani** For Project Supervision and Academic Guidance
+- **Maurizio Napolitano** For Project Supervision and Academic Guidance
 - **University of Trento** 
 - **OpenStreetMap contributors** for geospatial data
 
