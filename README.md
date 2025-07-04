@@ -111,7 +111,7 @@ Navigate through the notebooks in sequential order:
 
 ### Buffer Zone Analysis
 - **Zone 1**: 0-0.75 km (weight: 1.0)
-- **Zone 2**: 0.5-1.5 km (weight: 0.5)
+- **Zone 2**: 0.75-1.5 km (weight: 0.5)
 - **Zone 3**: 1.5-3.0 km (weight: 0.33)
 
 ### Vehicle Type Classification
