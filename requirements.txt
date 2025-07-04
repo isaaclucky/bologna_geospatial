@@ -18,3 +18,5 @@ statsmodels
 contextily
 matplotlib_scalebar
 pysal
+pyogrio
+folium
