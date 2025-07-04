@@ -101,10 +101,11 @@ pip install -r requirements.txt
 
 ### Jupyter Notebooks
 Navigate through the notebooks in sequential order:
-1. Start with `01_data_collection.ipynb` to understand data collection
-2. Evaluate modelling in `02_vehicle_type_modeling.ipynb`
-3. Deep dive into data preprocessing with `03_data_preparation.ipynb`
-4. Investigate spatial and temporal patterns in `04_data_analysis.ipynb`
+1. Extract the Zipped files.
+2. Start with `01_data_collection.ipynb` to understand data collection
+3. Evaluate modelling in `02_vehicle_type_modeling.ipynb`
+4. Deep dive into data preprocessing with `03_data_preparation.ipynb`
+5. Investigate spatial and temporal patterns in `04_data_analysis.ipynb`
 
 ## 🔬 Methodology Highlights
 
